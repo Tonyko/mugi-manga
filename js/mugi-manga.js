@@ -86,12 +86,12 @@ function editText(elm) {
 function activeNode(node) {
     if (active) {
         active.classed('active', false);
-        active.select('.border').style('display', 'none');
+        active.select('.resizer').style('display', 'none');
     }
 
     setActive(node);
     node.raise().classed('active', true);
-    active.select('.border').style('display', 'inline');
+    active.select('.resizer').style('display', 'inline');
 }
 
 function dragstarted() {
@@ -107,10 +107,10 @@ function draggedBody() {
     node.attr('x', parseInt(node.attr('x')) + d3.event.dx)
         .attr('y', parseInt(node.attr('y')) + d3.event.dy);
 
-    var border = d3.select(this.parentNode.parentNode).select('.border').nodes()[0];
-    d3.select(border)
-        .attr('x', parseInt(d3.select(border).attr('x')) + d3.event.dx)
-        .attr('y', parseInt(d3.select(border).attr('y')) + d3.event.dy);
+    var resizer = d3.select(this.parentNode.parentNode).select('.resizer').nodes()[0];
+    d3.select(resizer)
+        .attr('x', parseInt(d3.select(resizer).attr('x')) + d3.event.dx)
+        .attr('y', parseInt(d3.select(resizer).attr('y')) + d3.event.dy);
 
     var text = d3.select(this.parentNode.parentNode).select('.text').nodes()[0];
     d3.select(text)
@@ -124,10 +124,10 @@ function dragged() {
         .attr('x', parseInt(node.attr('x')) + d3.event.dx)
         .attr('y', parseInt(node.attr('y')) + d3.event.dy);
 
-    var border = d3.select(this.parentNode).select('.border').nodes()[0];
-    d3.select(border)
-        .attr('x', parseInt(d3.select(border).attr('x')) + d3.event.dx)
-        .attr('y', parseInt(d3.select(border).attr('y')) + d3.event.dy);
+    var resizer = d3.select(this.parentNode).select('.resizer').nodes()[0];
+    d3.select(resizer)
+        .attr('x', parseInt(d3.select(resizer).attr('x')) + d3.event.dx)
+        .attr('y', parseInt(d3.select(resizer).attr('y')) + d3.event.dy);
 
     var text = d3.select(this.parentNode).select('.text').nodes()[0];
     d3.select(text)
@@ -136,8 +136,7 @@ function dragged() {
 }
 
 function resized() {
-
-    var border = d3.select(this);
+    var resizer = d3.select(this);
 
     var node = d3.select(this.parentNode).select('.node').nodes()[0];
     var d3_text = d3.select(this.parentNode).select('.text').select('.edit').nodes()[0];
@@ -153,9 +152,9 @@ function resized() {
             .style('width', (w - 30) + 'px')
             .style('height', (h - 20) + 'px');
 
-        border
-            .attr('x', parseInt(border.attr('x')) + d3.event.dx)
-            .attr('y', parseInt(border.attr('y')) + d3.event.dy);
+        resizer
+            .attr('x', parseInt(resizer.attr('x')) + d3.event.dx)
+            .attr('y', parseInt(resizer.attr('y')) + d3.event.dy);
     }
 }
 
@@ -169,8 +168,8 @@ svg.on('mousedown', function() {
             .attr('class', 'group')
             .attr('changed', false);
 
-        var border = g.append('rect')
-            .attr('class', 'border')
+        var resizer = g.append('rect')
+            .attr('class', 'resizer')
             .attr('x', 0)
             .attr('y', 0)
             .attr('width', sizeBorder * 2)
@@ -211,7 +210,7 @@ svg.on('mousedown', function() {
             if (width > 10 && height > 10) {
                 g.attr('changed', true);
                 node.attr('width', width).attr('height', height);
-                border.attr('x', coords1[0] + width - sizeBorder).attr('y', coords1[1] + height - sizeBorder);
+                resizer.attr('x', coords1[0] + width - sizeBorder).attr('y', coords1[1] + height - sizeBorder);
             }
         });
     }
