@@ -135,22 +135,22 @@ function dragged() {
         .attr('y', parseInt(node.attr('y')) + d3.event.dy + 5);
 }
 
-function resized() {
-    var resizer = d3.select(this);
+function resized(event, g) {
+    var resizer = g.select('.resizer');
+    var node = g.select('.node');
+    var d3_text = g.select('.text').select('.edit');
 
-    var node = d3.select(this.parentNode).select('.node').nodes()[0];
-    var d3_text = d3.select(this.parentNode).select('.text').select('.edit').nodes()[0];
-    var w = parseInt(d3.select(node).attr('width')) + d3.event.dx;
-    var h = parseInt(d3.select(node).attr('height')) + d3.event.dy;
+    var w = parseInt(node.attr('width')) + d3.event.dx;
+    var h = parseInt(node.attr('height')) + d3.event.dy;
 
     if (w > 0 && h > 0) {
-        d3.select(node)
+        node
             .attr('width', w)
             .attr('height', h);
 
-        d3.select(d3_text)
-            .style('width', (w - 30) + 'px')
-            .style('height', (h - 20) + 'px');
+        d3_text
+            .style('width', (w - textBorderWidth) + 'px')
+            .style('height', (h - textBorderHeight) + 'px');
 
         resizer
             .attr('x', parseInt(resizer.attr('x')) + d3.event.dx)
@@ -167,17 +167,6 @@ svg.on('mousedown', function() {
         var g = svg.append('g')
             .attr('class', 'group')
             .attr('changed', false);
-
-        var resizer = g.append('rect')
-            .attr('class', 'resizer')
-            .attr('x', 0)
-            .attr('y', 0)
-            .attr('width', sizeBorder * 2)
-            .attr('height', sizeBorder * 2)
-            .style('display', 'inline')
-            .attr('cursor', 'se-resize')
-            .call(d3.drag()
-                .on('drag', resized));
 
         var node = g.append('rect')
             .attr('class', 'node')
@@ -199,6 +188,17 @@ svg.on('mousedown', function() {
             .attr('x', coords1[0] + 5)
             .attr('y', coords1[1] + 5)
             .append('xhtml:body');
+
+        var resizer = g.append('rect')
+            .attr('class', 'resizer')
+            .attr('x', 0)
+            .attr('y', 0)
+            .attr('width', sizeBorder * 2)
+            .attr('height', sizeBorder * 2)
+            .style('display', 'inline')
+            .attr('cursor', 'se-resize')
+            .call(d3.drag()
+                .on('drag', function(d) { return resized(d, g); }));
 
         activeNode(g, true);
 
