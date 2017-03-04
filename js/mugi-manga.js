@@ -40,6 +40,10 @@ function setActive(node) {
     active = node;
 }
 
+function compareSelection(a, b) {
+    return a.node() === b.node()
+}
+
 function setFont(elm, font, size, fontWeight) {
     var g = getNodeOrParent(elm, 'body');
     var text = g.select('.text').node();
@@ -59,7 +63,9 @@ function sizeFont(elm, size) {
 function editText(elm) {
     var g = getNodeOrParent(elm, 'body');
 
-    activeNode(g);
+    if (!compareSelection(g, active)) {
+        activeNode(g);
+    }
     setEditing(true);
 
     var text = g.select('.text').node();
@@ -83,8 +89,24 @@ function editText(elm) {
         .moveToBack();
 }
 
+function textAreaToText() {
+    if (document.getElementById("edit-text") !== null) {
+        var t = document.getElementById("edit-text").value.replaceAll('\n', '<br />');
+        var activeBubble = d3.select('.active');
+        activeBubble.select('.text').select('.edit')
+            .style('cursor', 'move')
+            .html('<p onselectstart=\"return false\" class=\"unselectable spn-text\" style=\"width: inherit; height: inherit;\">' + t + '</p>')
+            .on('contextmenu', d3.contextMenu(menu))
+            .call(d3.drag()
+                .on('start', function(d) { dragStarted(d, activeBubble); })
+                .on('drag', function(d) { dragged(d, activeBubble); }));
+        setEditing(false);
+    }
+}
+
 function activeNode(node) {
     if (active) {
+        textAreaToText();
         active.classed('active', false);
         active.select('.resizer').style('display', 'none');
     }
@@ -95,7 +117,9 @@ function activeNode(node) {
 }
 
 function dragStarted(event, g) {
-    activeNode(g);
+    if (!compareSelection(g, active)) {
+        activeNode(g);
+    }
 }
 
 function dragged(event, g) {
@@ -139,7 +163,6 @@ function resized(event, g) {
 }
 
 svg.on('mousedown', function() {
-
     // left click
     if (d3.event.button === 0 && editing === false && d3.event.toElement.localName === 'image') {
         var coords1 = d3.mouse(this);
@@ -197,16 +220,7 @@ svg.on('mousedown', function() {
     }
 
     if (editing === true && (d3.event.toElement.localName !== 'textarea')) {
-        var t = document.getElementById("edit-text").value.replaceAll('\n', '<br />');
-        var activeBubble = d3.select('.active');
-        activeBubble.select('.text').select('.edit')
-            .style('cursor', 'move')
-            .html('<p onselectstart=\"return false\" class=\"unselectable spn-text\" style=\"width: inherit; height: inherit;\">' + t + '</p>')
-            .on('contextmenu', d3.contextMenu(menu))
-            .call(d3.drag()
-                .on('start', function(d) { dragStarted(d, activeBubble); })
-                .on('drag', function(d) { dragged(d, activeBubble); }));
-        setEditing(false);
+        textAreaToText();
     }
 });
 
