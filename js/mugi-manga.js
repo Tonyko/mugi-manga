@@ -94,43 +94,23 @@ function activeNode(node) {
     active.select('.resizer').style('display', 'inline');
 }
 
-function dragstarted() {
-    activeNode(d3.select(this.parentNode));
+function dragStarted(event, g) {
+    activeNode(g);
 }
 
-function draggedBodyStart() {
-    activeNode(d3.select(this.parentNode.parentNode));
-}
-
-function draggedBody() {
-    var node = d3.select(this.parentNode.parentNode).select('.node');
-    node.attr('x', parseInt(node.attr('x')) + d3.event.dx)
-        .attr('y', parseInt(node.attr('y')) + d3.event.dy);
-
-    var resizer = d3.select(this.parentNode.parentNode).select('.resizer').nodes()[0];
-    d3.select(resizer)
-        .attr('x', parseInt(d3.select(resizer).attr('x')) + d3.event.dx)
-        .attr('y', parseInt(d3.select(resizer).attr('y')) + d3.event.dy);
-
-    var text = d3.select(this.parentNode.parentNode).select('.text').nodes()[0];
-    d3.select(text)
-        .attr('x', parseInt(node.attr('x')) + d3.event.dx + 5)
-        .attr('y', parseInt(node.attr('y')) + d3.event.dy + 5);
-}
-
-function dragged() {
-    var node = d3.select(this);
+function dragged(event, g) {
+    var node = g.select('.node');
     node
         .attr('x', parseInt(node.attr('x')) + d3.event.dx)
         .attr('y', parseInt(node.attr('y')) + d3.event.dy);
 
-    var resizer = d3.select(this.parentNode).select('.resizer').nodes()[0];
-    d3.select(resizer)
-        .attr('x', parseInt(d3.select(resizer).attr('x')) + d3.event.dx)
-        .attr('y', parseInt(d3.select(resizer).attr('y')) + d3.event.dy);
+    var resizer = g.select('.resizer');
+    resizer
+        .attr('x', parseInt(resizer.attr('x')) + d3.event.dx)
+        .attr('y', parseInt(resizer.attr('y')) + d3.event.dy);
 
-    var text = d3.select(this.parentNode).select('.text').nodes()[0];
-    d3.select(text)
+    var text = g.select('.text');
+    text
         .attr('x', parseInt(node.attr('x')) + d3.event.dx + 5)
         .attr('y', parseInt(node.attr('y')) + d3.event.dy + 5);
 }
@@ -176,12 +156,12 @@ svg.on('mousedown', function() {
             .attr('ry', '10')
             .attr('width', 0)
             .attr('height', 0)
-            .attr('fill', 'orange')
+            .attr('fill', backgroundColor)
             .attr('cursor', 'move')
             .on('contextmenu', d3.contextMenu(menu))
             .call(d3.drag()
-                .on('start', dragstarted)
-                .on('drag', dragged));
+                .on('start', function(d) {dragStarted(d, g); })
+                .on('drag', function(d) {dragged(d, g); }));
 
         var text = g.append('foreignObject')
             .attr('class', 'text')
@@ -200,9 +180,10 @@ svg.on('mousedown', function() {
             .call(d3.drag()
                 .on('drag', function(d) { return resized(d, g); }));
 
-        activeNode(g, true);
+        activeNode(g);
 
         svg.on('mousemove', function() {
+            // create bubble
             var coords2 = d3.mouse(this);
             var width = coords2[0] - coords1[0];
             var height = coords2[1] - coords1[1];
@@ -216,18 +197,17 @@ svg.on('mousedown', function() {
     }
 
     if (editing === true && (d3.event.toElement.localName !== 'textarea')) {
-        var text = document.getElementById("edit-text").value.replaceAll('\n', '<br />');
-        d3.select('.active').select('.text').select('.edit')
+        var t = document.getElementById("edit-text").value.replaceAll('\n', '<br />');
+        var activeBubble = d3.select('.active');
+        activeBubble.select('.text').select('.edit')
             .style('cursor', 'move')
-            .html('<p onselectstart=\"return false\" class=\"unselectable spn-text\" style=\"width: inherit; height: inherit;\">' + text + '</p>')
+            .html('<p onselectstart=\"return false\" class=\"unselectable spn-text\" style=\"width: inherit; height: inherit;\">' + t + '</p>')
             .on('contextmenu', d3.contextMenu(menu))
             .call(d3.drag()
-                .on('start', draggedBodyStart)
-                .on('drag', draggedBody));
-        editing = false;
+                .on('start', function(d) { dragStarted(d, activeBubble); })
+                .on('drag', function(d) { dragged(d, activeBubble); }));
+        setEditing(false);
     }
-
-    // console.log(d3.event.toElement);
 });
 
 svg.on('mouseup', function() {
