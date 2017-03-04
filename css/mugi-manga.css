@@ -1,0 +1,36 @@
+@font-face { font-family: WildWordsCE; src: url('../font/WildWordsCE.ttf'); }
+@font-face { font-family: BadaBoomCE; src: url('../font/BadaBoomCE.ttf'); }
+@font-face { font-family: BassoonCE; src: url('../font/BassoonCE.ttf'); }
+@font-face { font-family: Mistral; src: url('../font/Mistral.ttf'); }
+@font-face { font-family: MangaTempleCE; src: url('../font/MangaTempleCE.ttf'); }
+
+.group {
+    opacity: 0.9;
+    stroke-width: 3;
+    stroke: black;
+}
+
+.active {
+    opacity: 0.9;
+    stroke-width: 1;
+}
+
+.active .border {
+    stroke-width: 3;
+}
+
+.text {
+    color: black;
+}
+
+.unselectable {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    display: table-cell;
+    vertical-align: middle;
+    text-align: center;
+}
