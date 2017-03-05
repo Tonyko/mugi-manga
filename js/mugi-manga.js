@@ -7,6 +7,8 @@ var svg = d3.select('svg').style('border', '1px solid black');
 
 var active;
 var editing = false;
+var id = 0;
+var data = [];
 
 var menu = [
     {title: 'Edit text', action: function(elm) { editText(elm) }},
@@ -29,7 +31,14 @@ function getNodeOrParent(elm, tag) {
 }
 
 function deleteNode() {
-    d3.select('.active').remove();
+    var activeBubble = d3.select('.active');
+    var id = activeBubble.attr('data-id');
+    removeBubble(id);
+    activeBubble.remove();
+}
+
+function incrementId() {
+    id += 1;
 }
 
 function setEditing(state) {
@@ -44,11 +53,40 @@ function compareSelection(a, b) {
     return a.node() === b.node()
 }
 
+function appendBubble(newObj) {
+    data.push(newObj)
+}
+
+function removeBubble(id) {
+    var index = data.findIndex(function (d) { return d.id === id });
+    data.splice(index, 1)
+}
+
+function existBubble(id) {
+    return data.filter(function (d) { return d.id === id}).length !== 0
+}
+
+function getBubble(g) {
+    var id = g.attr('data-id');
+    return data.filter(function (d) { return d.id === id})[0];
+}
+
+function updateBubble(newObject) {
+    var index = data.findIndex(function (d) { return d.id === newObject.id });
+    if (index !== -1) data[index] = newObject;
+}
+
 function setFont(elm, font, size, fontWeight) {
     var g = getNodeOrParent(elm, 'body');
     var text = g.select('.text').node();
     var d3_text = d3.select(text).select('body').style('font', size + 'px ' + font);
     if (fontWeight === true) d3_text.style('font-weight', 'bold');
+
+    var obj = getBubble(g);
+    obj.font = font;
+    obj.fontSize = size;
+    obj.fontWeight = fontWeight;
+    updateBubble(obj);
 }
 
 function sizeFont(elm, size) {
@@ -56,8 +94,13 @@ function sizeFont(elm, size) {
     var text = g.select('.text').node();
     var d3_text = d3.select(text);
     var font_size = d3_text.select('body').style('font-size');
+    var s = parseInt(font_size.substring(0, font_size.length - 2)) + size;
     d3_text.select('body')
-        .style('font-size', (parseInt(font_size.substring(0, font_size.length - 2)) + size) + 'px');
+        .style('font-size', s + 'px');
+
+    var obj = getBubble(g);
+    obj.fontSize = s;
+    updateBubble(obj);
 }
 
 function editText(elm) {
@@ -100,6 +143,11 @@ function textAreaToText() {
             .call(d3.drag()
                 .on('start', function(d) { dragStarted(d, activeBubble); })
                 .on('drag', function(d) { dragged(d, activeBubble); }));
+
+        var obj = getBubble(activeBubble);
+        obj.text = t;
+        updateBubble(obj);
+
         setEditing(false);
     }
 }
@@ -124,9 +172,12 @@ function dragStarted(event, g) {
 
 function dragged(event, g) {
     var node = g.select('.node');
+    var x = parseInt(node.attr('x')) + d3.event.dx;
+    var y = parseInt(node.attr('y')) + d3.event.dy;
+
     node
-        .attr('x', parseInt(node.attr('x')) + d3.event.dx)
-        .attr('y', parseInt(node.attr('y')) + d3.event.dy);
+        .attr('x', x)
+        .attr('y', y);
 
     var resizer = g.select('.resizer');
     resizer
@@ -135,8 +186,13 @@ function dragged(event, g) {
 
     var text = g.select('.text');
     text
-        .attr('x', parseInt(node.attr('x')) + d3.event.dx + 5)
-        .attr('y', parseInt(node.attr('y')) + d3.event.dy + 5);
+        .attr('x', x + 5)
+        .attr('y', y + 5);
+
+    var obj = getBubble(g);
+    obj.x = x;
+    obj.y = y;
+    updateBubble(obj);
 }
 
 function resized(event, g) {
@@ -159,6 +215,11 @@ function resized(event, g) {
         resizer
             .attr('x', parseInt(resizer.attr('x')) + d3.event.dx)
             .attr('y', parseInt(resizer.attr('y')) + d3.event.dy);
+
+        var obj = getBubble(g);
+        obj.width = w;
+        obj.height = h;
+        updateBubble(obj);
     }
 }
 
@@ -169,7 +230,10 @@ svg.on('mousedown', function() {
 
         var g = svg.append('g')
             .attr('class', 'group')
+            .attr('data-id', id)
             .attr('changed', false);
+
+        incrementId();
 
         var node = g.append('rect')
             .attr('class', 'node')
@@ -227,6 +291,15 @@ svg.on('mousedown', function() {
 svg.on('mouseup', function() {
     svg.on('mousemove', null);
     d3.selectAll('g[changed = false]').remove();
+
+    var activeBubble = d3.select('.active');
+    if (!activeBubble.empty() && !existBubble(activeBubble.attr('data-id'))) {
+        appendBubble({
+            id: activeBubble.attr('data-id'),
+            height: activeBubble.select('.node').attr('height'),
+            width: activeBubble.select('.node').attr('width')
+        });
+    }
 });
 
 d3.select('body').on('keydown', function() {
