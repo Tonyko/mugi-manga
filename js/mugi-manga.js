@@ -7,7 +7,6 @@ var svg = d3.select('svg').style('border', '1px solid black');
 
 var active;
 var editing = false;
-var id = 0;
 var data = [];
 
 var menu = [
@@ -37,10 +36,6 @@ function deleteNode() {
     activeBubble.remove();
 }
 
-function incrementId() {
-    id += 1;
-}
-
 function setEditing(state) {
     editing = state;
 }
@@ -50,7 +45,8 @@ function setActive(node) {
 }
 
 function compareSelection(a, b) {
-    return a.node() === b.node()
+    if (a.empty() || b === undefined) return false;
+    else return a.node() === b.node()
 }
 
 function appendBubble(newObj) {
@@ -113,12 +109,12 @@ function editText(elm) {
 
     var text = g.select('.text').node();
     var d3_text = d3.select(text);
-    var d3_node = d3.select(g.select('.node').node());
+    var d3_node = g.select('.node');
     var h = parseInt(d3_node.attr('height')) - textBorderHeight;
     var w = parseInt(d3_node.attr('width')) - textBorderWidth;
 
     var spn_text = '';
-    if (g.select('.text').select('.edit').select('.spn-text').node()) {
+    if (!g.select('.text').select('.edit').select('.spn-text').empty()) {
         spn_text = g.select('.text').select('.edit').select('.spn-text').html().replaceAll('<br>', '\n');
     }
 
@@ -223,6 +219,71 @@ function resized(event, g) {
     }
 }
 
+// loadData('[{"id":"0","height":"106","width":"115","text":"test","x":169,"y":311,"font":"WildWordsCe","fontSize":16},{"id":"10000","x":"558","y":"293","height":"171","width":"148","text":"AAAA","font":"WildWordsCe","fontSize":16},{"id":"791a4beb-227b-0e84-4cb8-081d38c9b63b","x":293,"y":698,"height":"112","width":"157","text":"RAAAR","font":"BadaBoomCE","fontSize":25}]')
+function loadData(str) {
+    //json parse stringify
+    var newData = JSON.parse(str);
+    newData.forEach( function(d) {
+
+        var g = svg.append('g')
+            .attr('class', 'group')
+            .attr('data-id', d.id)
+            .attr('changed', true);
+
+        var node = g.append('rect')
+            .attr('class', 'node')
+            .attr('x', d.x)
+            .attr('y', d.y)
+            .attr('rx', '10')
+            .attr('ry', '10')
+            .attr('width', d.width)
+            .attr('height', d.height)
+            .attr('fill', backgroundColor)
+            .attr('cursor', 'move')
+            .on('contextmenu', d3.contextMenu(menu))
+            .call(d3.drag()
+                .on('start', function(d) {dragStarted(d, g); })
+                .on('drag', function(d) {dragged(d, g); }));
+
+        var fontWeight = 'normal';
+        if (d.fontWeight) fontWeight = 'bold';
+
+        var text = g.append('foreignObject')
+            .attr('class', 'text')
+            .attr('x', parseInt(d.x) + 5)
+            .attr('y', parseInt(d.y) + 5)
+            .append('xhtml:body')
+            .attr('class', 'edit')
+            .attr('x', d.x)
+            .attr('y', d.y)
+            .style('width', (parseInt(d.width) - textBorderWidth) + 'px')
+            .style('height', (parseInt(d.height) - textBorderHeight) + 'px')
+            .style('font', d.fontSize + 'px ' + d.font)
+            .style('font-weight', fontWeight)
+            .style('cursor', 'move')
+            .html('<p onselectstart=\"return false\" class=\"unselectable spn-text\" style=\"width: inherit; height: inherit;\">' + d.text + '</p>')
+            .on('contextmenu', d3.contextMenu(menu))
+            .call(d3.drag()
+                .on('start', function(d) { dragStarted(d, g); })
+                .on('drag', function(d) { dragged(d, g); }));
+
+        var resizer = g.append('rect')
+            .attr('class', 'resizer')
+            .attr('x', parseInt(d.x) + parseInt(d.width) - sizeBorder)
+            .attr('y', parseInt(d.y) + parseInt(d.height) - sizeBorder)
+            .attr('width', sizeBorder * 2)
+            .attr('height', sizeBorder * 2)
+            .style('display', 'none')
+            .attr('cursor', 'se-resize')
+            .call(d3.drag()
+                .on('drag', function(d) { return resized(d, g); }));
+
+    });
+
+    data = newData;
+}
+
+
 svg.on('mousedown', function() {
     // left click
     if (d3.event.button === 0 && editing === false && d3.event.toElement.localName === 'image') {
@@ -230,10 +291,8 @@ svg.on('mousedown', function() {
 
         var g = svg.append('g')
             .attr('class', 'group')
-            .attr('data-id', id)
+            .attr('data-id', guid())
             .attr('changed', false);
-
-        incrementId();
 
         var node = g.append('rect')
             .attr('class', 'node')
@@ -294,10 +353,13 @@ svg.on('mouseup', function() {
 
     var activeBubble = d3.select('.active');
     if (!activeBubble.empty() && !existBubble(activeBubble.attr('data-id'))) {
+        var node = activeBubble.select('.node');
         appendBubble({
             id: activeBubble.attr('data-id'),
-            height: activeBubble.select('.node').attr('height'),
-            width: activeBubble.select('.node').attr('width')
+            x: node.attr('x'),
+            y: node.attr('y'),
+            height: node.attr('height'),
+            width: node.attr('width')
         });
     }
 });
